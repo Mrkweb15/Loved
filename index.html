@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sweet Scenery</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="time-afternoon weather-clear">
+    <div id="scene">
+      <canvas id="skyCanvas"></canvas>
+      <div id="cloudImgs"></div>
+      <canvas id="weatherCanvas"></canvas>
+      <div id="clouds"></div>
+      <img id="landImage" src="image/land.png" alt="land" />
+    </div>
+
+    <main id="ui">
+      <section class="card" aria-live="polite">
+        <div class="card-text" id="message">Hi there. I care about you.</div>
+        <div class="card-actions">
+          <button id="another">Another message</button>
+        </div>
+      </section>
+
+      <section class="info" id="info">
+        <div class="info-row">
+          <span id="location">Locating...</span>
+          <span>•</span>
+          <span id="weather">Weather: --</span>
+          <span>•</span>
+          <span id="timeofday">Time: --</span>
+        </div>
+        <div class="notice" id="notice" hidden></div>
+      </section>
+
+      
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+  </html>

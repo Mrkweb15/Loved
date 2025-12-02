@@ -19,6 +19,17 @@ const MESSAGES = [
   "You shine quietly and beautifully."
 ];
 
+function getHourLocalOrPH(){
+  try{ return new Date().getHours(); }catch(e){}
+  const s = new Date().toLocaleString('en-US',{ hour:'numeric', hour12:false, timeZone:'Asia/Manila' });
+  const h = parseInt(s,10);
+  if(!isNaN(h)) return h;
+  const utcH = new Date().getUTCHours();
+  return (utcH+8)%24;
+}
+
+function formatCurrentTime(){ try{ return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }catch(e){} try{ return new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', timeZone:'Asia/Manila'}); }catch(e2){} const utc = new Date(); const m = utc.getUTCMinutes(); const h = (utc.getUTCHours()+8)%24; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+
 const els = {
   message: document.getElementById("message"),
   another: document.getElementById("another"),
@@ -31,6 +42,8 @@ const els = {
   sky: document.getElementById("skyCanvas"),
   cloudImgs: document.getElementById("cloudImgs"),
   landImage: document.getElementById("landImage"),
+  overlay: document.getElementById("permissionOverlay"),
+  allowLocation: document.getElementById("allowLocation"),
 };
 
 let rainAnim = null;
@@ -44,8 +57,7 @@ function pickMessage(){
 }
 
 function getTimeOfDay(){
-  const d = new Date();
-  const h = d.getHours();
+  const h = getHourLocalOrPH();
   if(h>=5 && h<=7) return "sunrise";
   if(h>=11 && h<=13) return "noon";
   if(h>=14 && h<=16) return "afternoon";
@@ -65,7 +77,7 @@ function mapWeather(main,time){
 function setScene(time,weather){
   const b = document.body;
   b.className = `time-${time} weather-${weather}`;
-  els.time.textContent = `Time: ${time[0].toUpperCase()+time.slice(1)}`;
+  els.time.textContent = `Time: ${formatCurrentTime()}`;
   updateEffects(time,weather);
 }
 function setSceneAuto(time,weather){ setScene(time,weather); }
@@ -206,20 +218,27 @@ async function fetchApproxLocationByIP(){
   }catch(e){ return null; }
 }
 
+async function reverseGeocode(lat,lon){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+    if(!res.ok) throw new Error("bad");
+    const data = await res.json();
+    const a = data.address||{};
+    const cityOnly = a.city||a.town||a.village||a.municipality||a.locality||a.county||null;
+    return cityOnly;
+  }catch(e){ return null; }
+}
+
 async function init(){
   pickMessage();
   els.another.addEventListener("click",pickMessage);
+  const startClock = ()=>{ const update=()=>{ els.time.textContent = `Time: ${formatCurrentTime()}`; }; update(); setInterval(update,30000); };
+  startClock();
   
   const time = getTimeOfDay();
   setSceneAuto(time, DEFAULT_SCENERY.weather);
   els.location.textContent = "Locating...";
-  if(!("geolocation" in navigator)){
-    els.location.textContent = "Location unavailable";
-    els.notice.hidden = false; els.notice.textContent = "Location access unavailable. Showing default scenery.";
-    els.weather.textContent = `Weather: ${DEFAULT_SCENERY.weather}`;
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(async(pos)=>{
+  const requestGeo = ()=>navigator.geolocation.getCurrentPosition(async(pos)=>{
     const {latitude:lat, longitude:lon} = pos.coords;
     const wdata = await getWeatherForLatLon(lat,lon);
     if(!wdata){
@@ -227,34 +246,21 @@ async function init(){
       els.weather.textContent = "Weather: default";
       els.notice.hidden = false; els.notice.textContent = "Weather service unavailable. Using default scenery.";
       const t0 = getTimeOfDay(); lastAuto = { time:t0, weather:DEFAULT_SCENERY.weather, place: els.location.textContent, tempC: null }; setSceneAuto(t0, DEFAULT_SCENERY.weather);
+      if(els.overlay) els.overlay.setAttribute("hidden","");
       return;
     }
     const t = getTimeOfDay();
     const w = mapWeather(wdata.main,t);
-    els.location.textContent = wdata.place;
+    const rg = await reverseGeocode(lat,lon);
+    const placeName = rg || wdata.place || "";
+    els.location.textContent = placeName;
     els.weather.textContent = `Weather: ${w} • ${wdata.tempC}°C`;
-    lastAuto = { time:t, weather:w, place:wdata.place, tempC:wdata.tempC };
+    lastAuto = { time:t, weather:w, place:placeName, tempC:wdata.tempC };
     setSceneAuto(t,w);
-  },async(err)=>{
-    const approx = await fetchApproxLocationByIP();
-    if(approx){
-      const wdata = await getWeatherForLatLon(approx.lat, approx.lon);
-      if(wdata){
-        const t = getTimeOfDay();
-        const w = mapWeather(wdata.main,t);
-        els.location.textContent = approx.place;
-        els.notice.hidden = false; els.notice.textContent = "Using approximate location from network.";
-        els.weather.textContent = `Weather: ${w} • ${wdata.tempC}°C`;
-        lastAuto = { time:t, weather:w, place:approx.place, tempC:wdata.tempC };
-        setSceneAuto(t,w);
-        return;
-      }
-    }
-    els.location.textContent = "Location unavailable";
-    els.notice.hidden = false; els.notice.textContent = "Unable to determine location/weather. Showing default scenery.";
-    els.weather.textContent = `Weather: ${DEFAULT_SCENERY.weather}`;
-    const t1 = getTimeOfDay(); lastAuto = { time:t1, weather:DEFAULT_SCENERY.weather, place:"Location unavailable", tempC:null }; setSceneAuto(t1, DEFAULT_SCENERY.weather);
-  },{enableHighAccuracy:false, timeout:10000});
+    if(els.overlay) els.overlay.setAttribute("hidden","");
+  },(err)=>{ if(els.overlay) els.overlay.removeAttribute("hidden"); },{enableHighAccuracy:false, timeout:10000});
+  if("geolocation" in navigator){ requestGeo(); } else { if(els.overlay) els.overlay.removeAttribute("hidden"); }
+  if(els.allowLocation){ els.allowLocation.addEventListener("click",()=>{ if("geolocation" in navigator){ requestGeo(); } }); }
 }
 
 init();

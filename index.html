@@ -23,16 +23,21 @@
         </div>
       </section>
 
-      <section class="info" id="info">
-        <div class="info-row">
-          <span id="location">Locating...</span>
-          <span>•</span>
-          <span id="weather">Weather: --</span>
-          <span>•</span>
-          <span id="timeofday">Time: --</span>
-        </div>
-        <div class="notice" id="notice" hidden></div>
+      <section class="hud" id="hud" aria-live="polite">
+        <div class="hud-row"><span id="location">Locating...</span></div>
+        <div class="hud-row"><span id="weather">Weather: --</span></div>
+        <div class="hud-row"><span id="timeofday">Time: --</span></div>
       </section>
+      <div class="notice" id="notice" hidden></div>
+
+      <div id="permissionOverlay" class="overlay" role="dialog" aria-modal="true" aria-live="assertive">
+        <div class="overlay-card">
+          <div class="overlay-text">Location permission is required to view this page.</div>
+          <div class="overlay-actions">
+            <button id="allowLocation" class="pill">Allow Location</button>
+          </div>
+        </div>
+      </div>
 
       
     </main>

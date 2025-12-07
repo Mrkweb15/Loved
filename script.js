@@ -58,8 +58,8 @@ function pickMessage(){
 
 function getTimeOfDay(){
   const h = getHourLocalOrPH();
-  if(h>=5 && h<=7) return "sunrise";
-  if(h>=11 && h<=13) return "noon";
+  if(h>=5 && h<=8) return "sunrise";
+  if(h>=9 && h<=13) return "noon";
   if(h>=14 && h<=16) return "afternoon";
   if(h>=17 && h<=19) return "sunset";
   return "night";

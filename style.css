@@ -47,7 +47,7 @@ body.weather-cloudy #clouds, body.weather-rainy #clouds{display:block}
 #clouds{display:none}
 
 .cloud-img{position:absolute;top:-10%;will-change:transform;opacity:.0;filter:drop-shadow(0 6px 10px rgba(0,0,0,.18))}
-.cloud-img.rainy{filter:brightness(.85) saturate(.9) drop-shadow(0 6px 12px rgba(0,0,0,.3))}
+.cloud-img.rainy{filter:brightness(.78) saturate(.9) drop-shadow(0 6px 12px rgba(0,0,0,.34))}
 @keyframes cloudDrift{0%{transform:translateX(-30vw);opacity:0}10%{opacity:.9}90%{opacity:.9}100%{transform:translateX(130vw);opacity:0}}
 
 body.weather-rainy{background-blend-mode:normal}

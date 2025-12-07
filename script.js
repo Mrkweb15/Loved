@@ -84,7 +84,7 @@ function setSceneAuto(time,weather){ setScene(time,weather); }
 
 function updateEffects(time,weather){
   if(weather!=="rainy"){ stopRain(); } else { startRain(); }
-  if(weather==="cloudy"||weather==="rainy"){ showCloudImages(weather); } else { clearCloudImages(); }
+  if(weather==="cloudy"||weather==="rainy"){ clearCloudImages(); showCloudImages(weather,time); } else { clearCloudImages(); }
   if(time==="night"){ startNightSky(); stopDaySky(); } else { startDaySky(time); dayAnim.weather = weather; stopNightSky(); }
 }
 
@@ -112,10 +112,10 @@ function showClouds(){
 }
 function clearClouds(){ els.clouds.innerHTML = ""; }
 
-function showCloudImages(weather){
+function showCloudImages(weather,time){
   if(els.cloudImgs.childElementCount>0) return;
   const imgs = ["image/cloud_1.png","image/cloud_2.png"];
-  const count = 8;
+  const count = weather==="rainy" && time!=="night" ? 14 : weather==="cloudy" ? 10 : 8;
   for(let i=0;i<count;i++){
     const img = document.createElement("img");
     img.src = imgs[i%imgs.length];
@@ -172,6 +172,7 @@ class DaySkyAnimation{
   stop(){ this.running=false; this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height); }
   sunPos(){ const w=window.innerWidth, h=window.innerHeight; const m={ sunrise:[0.18,0.35], noon:[0.5,0.15], afternoon:[0.72,0.22], sunset:[0.82,0.38] }; const p=m[this.time]||m.afternoon; return {x:w*p[0], y:h*p[1]}; }
   render(){ const ctx=this.ctx; const w=window.innerWidth, h=window.innerHeight; ctx.clearRect(0,0,w,h);
+    if(this.weather==="rainy" && this.time!=="night"){ const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,"rgba(12,18,28,0.72)"); g.addColorStop(1,"rgba(12,18,28,0.54)"); ctx.fillStyle=g; ctx.fillRect(0,0,w,h); }
     const gpos=this.sunPos(); const r=Math.min(w,h)*0.09; const baseA=this.weather==="cloudy"?0.5:this.weather==="rainy"?0.25:0.85; const glow=ctx.createRadialGradient(gpos.x,gpos.y,r*0.3,gpos.x,gpos.y,r*1.4); glow.addColorStop(0,`rgba(255,240,180,${baseA})`); glow.addColorStop(1,"rgba(255,240,180,0)"); ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(gpos.x,gpos.y,r*1.4,0,Math.PI*2); ctx.fill(); if(this.weather!=="rainy"){ ctx.fillStyle="rgba(255,230,120,1)"; ctx.beginPath(); ctx.arc(gpos.x,gpos.y,r,0,Math.PI*2); ctx.fill(); ctx.save(); ctx.translate(gpos.x,gpos.y); ctx.rotate(this.t*0.2); ctx.strokeStyle=`rgba(255,230,120,${baseA})`; ctx.lineWidth=2; for(let i=0;i<12;i++){ ctx.rotate(Math.PI*2/12); ctx.beginPath(); ctx.moveTo(r*1.1,0); ctx.lineTo(r*1.4,0); ctx.stroke(); } ctx.restore(); }
     
   }
